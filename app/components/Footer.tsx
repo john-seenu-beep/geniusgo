@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+const COPYRIGHT_YEAR = 2026;
+
 const footerLinks = {
   Product: [
     { label: "Features", href: "#features" },
@@ -58,7 +60,7 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 sm:flex-row">
           <p className="text-sm text-zinc-600">
-            &copy; {new Date().getFullYear()} GeniusGo. All rights reserved.
+            &copy; {COPYRIGHT_YEAR} GeniusGo. All rights reserved.
           </p>
           <div className="flex gap-4">
             <a

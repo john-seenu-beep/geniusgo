@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 type CurrentStatus = "student" | "professional" | "switcher";
 type ExperienceLevel = "beginner" | "intermediate" | "advanced";
@@ -148,12 +148,21 @@ export default function HeroForm() {
   const [currentStatus, setCurrentStatus] = useState<CurrentStatus>("student");
   const [experienceLevel, setExperienceLevel] =
     useState<ExperienceLevel>("beginner");
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormState("loading");
 
-    window.setTimeout(() => {
+    loadingTimeoutRef.current = setTimeout(() => {
       setFormState("result");
     }, 1500);
   }
@@ -167,9 +176,12 @@ export default function HeroForm() {
         onSubmit={handleSubmit}
         className="glass-card animate-fade-in-up animate-delay-400 rounded-2xl p-6 sm:p-8"
       >
-        <fieldset disabled={isLoading} className="space-y-6">
+        <div className="space-y-6">
           {/* Current Status */}
-          <div className="space-y-3">
+          <fieldset
+            disabled={isLoading}
+            className="min-w-0 space-y-3 border-0 p-0"
+          >
             <legend className={labelClassName}>Current Status</legend>
             <div className="grid gap-2 sm:grid-cols-3">
               {currentStatusOptions.map((option) => (
@@ -193,7 +205,7 @@ export default function HeroForm() {
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           {/* Target Role */}
           <div className="space-y-2">
@@ -205,6 +217,7 @@ export default function HeroForm() {
               name="targetRole"
               type="text"
               required
+              disabled={isLoading}
               placeholder="e.g. Senior Software Engineer"
               className={inputClassName}
             />
@@ -220,13 +233,17 @@ export default function HeroForm() {
               name="currentSkills"
               required
               rows={4}
+              disabled={isLoading}
               placeholder="e.g. JavaScript, React, HTML/CSS, basic Git..."
               className={`${inputClassName} resize-none`}
             />
           </div>
 
           {/* Experience Level */}
-          <div className="space-y-3">
+          <fieldset
+            disabled={isLoading}
+            className="min-w-0 space-y-3 border-0 p-0"
+          >
             <legend className={labelClassName}>Experience Level</legend>
             <div className="grid gap-2 sm:grid-cols-3">
               {experienceLevelOptions.map((option) => (
@@ -250,8 +267,8 @@ export default function HeroForm() {
                 </label>
               ))}
             </div>
-          </div>
-        </fieldset>
+          </fieldset>
+        </div>
 
         <button
           type="submit"
