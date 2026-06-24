@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -13,6 +13,7 @@ import {
   Rocket,
   Sparkles,
   Target,
+  TrendingUp,
 } from "lucide-react";
 
 type CurrentStatus = "Student" | "Working Professional" | "Career Switcher";
@@ -29,6 +30,10 @@ type Roadmap = {
     description: string;
     skillsPracticed: string[];
   }[];
+  estimatedHiringReadinessScore: number;
+  isRealistic?: boolean;
+  reason?: string;
+  recommendedDuration?: string;
 };
 
 const currentStatusOptions: CurrentStatus[] = [
@@ -56,7 +61,7 @@ function PlanCard({
   accent,
 }: {
   title: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   items: string[];
   accent: string;
 }) {
@@ -69,12 +74,16 @@ function PlanCard({
         <h3 className="text-lg font-semibold text-white">{title}</h3>
       </div>
       <ul className="space-y-3">
-        {items.map((item) => (
-          <li key={item} className="flex gap-3 text-sm leading-6 text-zinc-300">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
-            <span>{item}</span>
-          </li>
-        ))}
+        {items.length > 0 ? (
+          items.map((item) => (
+            <li key={item} className="flex gap-3 text-sm leading-6 text-zinc-300">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+              <span>{item}</span>
+            </li>
+          ))
+        ) : (
+          <li className="text-sm text-zinc-400">No plan items were returned for this case.</li>
+        )}
       </ul>
     </section>
   );
@@ -87,6 +96,13 @@ function RoadmapResults({
   roadmap: Roadmap;
   onReset: () => void;
 }) {
+  const readinessColor =
+    roadmap.estimatedHiringReadinessScore >= 75
+      ? "from-emerald-400 to-cyan-400"
+      : roadmap.estimatedHiringReadinessScore >= 50
+        ? "from-amber-400 to-orange-400"
+        : "from-rose-400 to-red-500";
+
   return (
     <div className="mt-8 space-y-6 animate-fade-in">
       <section className="rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-6 shadow-2xl shadow-cyan-950/30">
@@ -113,6 +129,61 @@ function RoadmapResults({
           </button>
         </div>
       </section>
+
+      <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+        <section className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">Hiring Readiness</h3>
+              <p className="text-sm text-zinc-400">Estimated score from Gemini</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="mb-3 flex items-end justify-between">
+              <span className="text-3xl font-semibold text-white">
+                {roadmap.estimatedHiringReadinessScore}/100
+              </span>
+              <span className="text-sm text-zinc-400">
+                {roadmap.isRealistic === false ? "Needs more time" : "On track"}
+              </span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+              <div
+                className={`h-full rounded-full bg-gradient-to-r ${readinessColor}`}
+                style={{ width: `${roadmap.estimatedHiringReadinessScore}%` }}
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/15 text-amber-300">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">Reality Check</h3>
+              <p className="text-sm text-zinc-400">Timeline realism from Gemini</p>
+            </div>
+          </div>
+          {roadmap.isRealistic === false ? (
+            <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm leading-6 text-amber-100">
+              <p className="font-semibold">This target looks too ambitious for the selected timeline.</p>
+              <p className="mt-2">{roadmap.reason}</p>
+              <p className="mt-2">
+                Recommended duration: <span className="font-semibold">{roadmap.recommendedDuration}</span>
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm leading-6 text-emerald-100">
+              The plan is designed to be practical for your chosen timeline and current profile.
+            </div>
+          )}
+        </section>
+      </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <PlanCard
@@ -154,9 +225,7 @@ function RoadmapResults({
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/15 text-emerald-300">
               <Briefcase className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-semibold text-white">
-              Recommended Projects
-            </h3>
+            <h3 className="text-lg font-semibold text-white">Recommended Projects</h3>
           </div>
           <div className="space-y-4">
             {roadmap.recommendedProjects.map((project) => (
@@ -205,34 +274,54 @@ export default function HeroForm() {
     setError("");
     setRoadmap(null);
 
+    const payload = {
+      currentStatus,
+      targetRole,
+      currentSkills,
+      experienceLevel,
+      duration,
+    };
+
+    console.log("[Roadmap Form] Before fetch:", payload);
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 20000);
+
     try {
       const response = await fetch("/api/roadmap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({
-          currentStatus,
-          targetRole,
-          currentSkills,
-          experienceLevel,
-          duration,
-        }),
+        body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
+      console.log("[Roadmap Form] After fetch:", response);
+
       const data = await response.json();
+      console.log("[Roadmap Form] After response.json():", data);
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to generate roadmap.");
+        throw new Error(data?.error || "Failed to generate roadmap.");
+      }
+
+      if (!data?.roadmap) {
+        throw new Error("The API did not return a roadmap payload.");
       }
 
       setRoadmap(data.roadmap);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to generate a personalized roadmap."
-      );
+      if (err instanceof Error && err.name === "AbortError") {
+        setError("The roadmap request timed out. Please try again.");
+      } else {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to generate a personalized roadmap."
+        );
+      }
     } finally {
+      window.clearTimeout(timeoutId);
       setLoading(false);
     }
   }
