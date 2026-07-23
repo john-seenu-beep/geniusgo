@@ -56,8 +56,8 @@ type RoadmapResponse = {
   isFallback?: boolean;
 };
 
-const GEMINI_MODEL = "gemini-2.5-flash";
-const TIMEOUT_MS = 30_000;
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
+const TIMEOUT_MS = 90_000;
 const MAX_RETRIES = 3;
 const retryableStatuses = new Set([429, 500, 502, 503, 504]);
 const requestLog = new Map<string, { count: number; resetAt: number }>();
@@ -150,19 +150,79 @@ function rateLimited(request: Request) {
   if (!entry || entry.resetAt < now) { requestLog.set(ip, { count: 1, resetAt: now + 60_000 }); return false; }
   entry.count += 1; return entry.count > 8;
 }
-
 async function gemini(prompt: string, apiKey: string) {
   let lastError = new Error("The career AI is temporarily unavailable.");
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
-    const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.65, topP: 0.9, maxOutputTokens: 8192, responseMimeType: "application/json" } }), signal: controller.signal });
-      if (!response.ok) { const payload = await response.json().catch(() => null) as { error?: { message?: string } } | null; const error = Object.assign(new Error(payload?.error?.message || "The career AI did not respond."), { retryable: retryableStatuses.has(response.status) }); if (!error.retryable || attempt === MAX_RETRIES) throw error; lastError = error; }
-      else { const payload = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }; const output = payload.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("").trim(); if (output) return output; throw new Error("The career AI returned an empty response."); }
-    } catch (error) { lastError = error instanceof Error ? error : lastError; if (attempt === MAX_RETRIES || (typeof error === "object" && error !== null && "retryable" in error && (error as { retryable?: boolean }).retryable === false)) break; }
-    finally { clearTimeout(timeout); }
-    await new Promise((resolve) => setTimeout(resolve, 1_000 * 2 ** attempt));
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: prompt }],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.65,
+              topP: 0.9,
+              maxOutputTokens: 4096,
+              responseMimeType: "application/json",
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+
+        const error = Object.assign(
+          new Error(payload?.error?.message || "Gemini failed."),
+          {
+            retryable: retryableStatuses.has(response.status),
+          }
+        );
+
+        if (!error.retryable || attempt === MAX_RETRIES) {
+          throw error;
+        }
+
+        lastError = error;
+      } else {
+        const payload = await response.json();
+
+        const output =
+          payload.candidates?.[0]?.content?.parts
+            ?.map((p: any) => p.text || "")
+            .join("")
+            .trim();
+
+        if (output) {
+          return output;
+        }
+
+        throw new Error("Empty Gemini response.");
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : lastError;
+
+      if (
+        attempt === MAX_RETRIES ||
+        ((error as any)?.retryable === false)
+      ) {
+        break;
+      }
+    }
+
+    await new Promise((r) => setTimeout(r, 2000));
   }
+
   throw lastError;
 }
 
