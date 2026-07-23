@@ -8,6 +8,8 @@
   --muted: #71717a;
   --border: rgba(255, 255, 255, 0.08);
   --card: rgba(255, 255, 255, 0.03);
+  --font-geist-sans: Arial, Helvetica, sans-serif;
+  --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
 @theme inline {
@@ -103,6 +105,29 @@ body {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.625rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e4e4e7;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.action-button:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.22); }
+
+@media print {
+  body { background: #fff; color: #18181b; }
+  header, footer, form, .print\:hidden { display: none !important; }
+  #roadmap-results { margin-top: 0; }
+  .glass-card { box-shadow: none; break-inside: avoid; }
 }
 
 .grid-bg {

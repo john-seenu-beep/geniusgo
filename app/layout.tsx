@@ -1,21 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "GeniusGo — Your AI Career Copilot",
+  metadataBase: new URL("https://geniusgo.app"),
+  title: { default: "GeniusGo — Your AI Career Copilot", template: "%s | GeniusGo" },
   description:
     "Generate personalized career roadmaps, identify skill gaps, discover projects, and prepare for interviews using AI.",
+  keywords: ["AI career roadmap", "career planning", "skill gap analysis", "interview preparation"],
+  openGraph: { type: "website", siteName: "GeniusGo", title: "GeniusGo — Your AI Career Copilot", description: "A clear, personalized roadmap for your next career move." },
+  twitter: { card: "summary_large_image", title: "GeniusGo — Your AI Career Copilot", description: "A clear, personalized roadmap for your next career move." },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
@@ -24,11 +18,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+    <html lang="en" className="h-full scroll-smooth antialiased">
+      <body className="flex min-h-full flex-col bg-background text-foreground">
         {children}
       </body>
     </html>

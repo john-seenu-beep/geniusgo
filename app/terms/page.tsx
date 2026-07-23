@@ -1,0 +1,3 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Terms of Use" };
+export default function TermsPage() { return <main className="mx-auto min-h-screen max-w-3xl px-6 py-24"><h1 className="text-4xl font-bold">Terms of Use</h1><p className="mt-6 leading-7 text-zinc-300">GeniusGo provides educational career guidance, not professional, legal, licensing, or hiring advice. Verify recommendations and external resources before relying on them.</p><p className="mt-4 leading-7 text-zinc-300">Use the service responsibly and do not submit harmful or sensitive information.</p></main>; }
